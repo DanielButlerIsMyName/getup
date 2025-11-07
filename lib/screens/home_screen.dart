@@ -6,6 +6,7 @@ import '../models/alarm_model.dart';
 import '../services/storage_service.dart';
 import '../services/notification_service.dart';
 import '../services/alarm_manager_service.dart';
+import '../services/light_sensor_service.dart';
 import 'create_alarm_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -28,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
   double _lightLevel = 0.0;
 
   StreamSubscription<AccelerometerEvent>? _accelerometerSubscription;
-  Timer? _lightTimer;
+  StreamSubscription<double>? _lightSubscription;
 
   @override
   void initState() {
@@ -47,26 +48,31 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     });
 
-    // Simulate light sensor (Android doesn't expose ambient light sensor easily)
-    // In production, you'd need to use camera brightness or a plugin
-    _lightTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
-      // Simulate varying light levels based on movement (just for demo)
-      final magnitude = sqrt(
-        _accelerometerX * _accelerometerX +
-        _accelerometerY * _accelerometerY +
-        _accelerometerZ * _accelerometerZ
-      );
-      setState(() {
-        // Simulate light: more movement = "more light detected"
-        _lightLevel = 50 + (magnitude * 10).clamp(0, 200);
-      });
-    });
+    // Real light sensor using platform channel
+    final lightSensorService = LightSensorService();
+    lightSensorService.startListening();
+
+    _lightSubscription = lightSensorService.getLightSensorStream().listen(
+      (double lux) {
+        setState(() {
+          _lightLevel = lux;
+        });
+      },
+      onError: (error) {
+        debugPrint('Light sensor error: $error');
+        // Fallback to simulated light if sensor is not available
+        setState(() {
+          _lightLevel = 0.0;
+        });
+      },
+    );
   }
 
   @override
   void dispose() {
     _accelerometerSubscription?.cancel();
-    _lightTimer?.cancel();
+    _lightSubscription?.cancel();
+    LightSensorService().stopListening();
     super.dispose();
   }
 
