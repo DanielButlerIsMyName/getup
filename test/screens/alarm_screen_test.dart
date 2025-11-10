@@ -1,0 +1,72 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:getup/screens/alarm_screen.dart';
+import 'package:getup/models/alarm_model.dart';
+
+void main() {
+  testWidgets('AlarmScreen displays alarm time and ALARM text', (
+    WidgetTester tester,
+  ) async {
+    final testAlarm = AlarmModel(
+      id: 1,
+      scheduledTime: DateTime(2024, 1, 1, 7, 30),
+      shakeIntensity: ShakeIntensity.medium,
+      brightnessThreshold: BrightnessThreshold.normal,
+    );
+
+    await tester.pumpWidget(MaterialApp(home: AlarmScreen(alarm: testAlarm)));
+
+    // Allow async operations to complete
+    await tester.pump();
+
+    // Verify alarm time is displayed
+    expect(find.text('07:30'), findsOneWidget);
+
+    // Verify alarm title is displayed
+    expect(find.text('ALARM!'), findsOneWidget);
+
+    // Verify requirements section is displayed
+    expect(find.text('Dismiss Requirements'), findsOneWidget);
+  });
+
+  testWidgets('AlarmScreen displays shake and light requirements', (
+    WidgetTester tester,
+  ) async {
+    final testAlarm = AlarmModel(
+      id: 1,
+      scheduledTime: DateTime(2024, 1, 1, 7, 30),
+      shakeIntensity: ShakeIntensity.light,
+      brightnessThreshold: BrightnessThreshold.low,
+    );
+
+    await tester.pumpWidget(MaterialApp(home: AlarmScreen(alarm: testAlarm)));
+
+    // Allow async operations to complete
+    await tester.pump();
+
+    // Verify basic UI elements exist
+    expect(find.text('07:30'), findsOneWidget);
+    expect(find.text('ALARM!'), findsOneWidget);
+    expect(find.text('Dismiss Requirements'), findsOneWidget);
+  });
+
+  testWidgets('AlarmScreen has dismiss button', (WidgetTester tester) async {
+    final testAlarm = AlarmModel(
+      id: 1,
+      scheduledTime: DateTime(2024, 1, 1, 8, 15),
+      shakeIntensity: ShakeIntensity.medium,
+      brightnessThreshold: BrightnessThreshold.normal,
+    );
+
+    await tester.pumpWidget(MaterialApp(home: AlarmScreen(alarm: testAlarm)));
+
+    // Allow async operations to complete
+    await tester.pump();
+
+    // Verify time displays correctly
+    expect(find.text('08:15'), findsOneWidget);
+
+    // Verify button exists (will show either "DISMISS ALARM" or "Complete Requirements")
+    expect(find.byType(ElevatedButton), findsOneWidget);
+  });
+}

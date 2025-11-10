@@ -12,11 +12,19 @@ class AlarmManagerService {
     final alarmSettings = AlarmSettings(
       id: alarm.id,
       dateTime: alarm.scheduledTime,
-      assetAudioPath: alarm.audioPath ?? 'assets/marimba.mp3',
+      assetAudioPath: alarm.audioPath,
       loopAudio: true,
       vibrate: true,
-      volumeSettings: const VolumeSettings.fixed(volume: 1.0, volumeEnforced: true),
-      notificationSettings: const NotificationSettings(title: 'ALARM!', body: 'Time to wake up!', stopButton: 'Stop'),
+      // TODO: MARC Adjust volume
+      volumeSettings: const VolumeSettings.fixed(
+        volume: 0.1,
+        volumeEnforced: false,
+      ),
+      notificationSettings: const NotificationSettings(
+        title: 'ALARM!',
+        body: 'Time to wake up!',
+        stopButton: 'Stop',
+      ),
     );
 
     await Alarm.set(alarmSettings: alarmSettings);

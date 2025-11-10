@@ -1,54 +1,49 @@
-import 'dart:async';
 import 'package:flutter/services.dart';
+import 'dart:async';
 
 class LightDetectorService {
-  static const int lightThreshold = 100; // lux threshold for dismissing alarm
-  static const platform = MethodChannel('com.getup.alarm/sensors');
-  static const eventChannel = EventChannel('com.getup.alarm/light_sensor');
+  static const MethodChannel _methodChannel = MethodChannel(
+    'com.getup.alarm/sensors',
+  );
+  static const EventChannel _eventChannel = EventChannel(
+    'com.getup.alarm/light_sensor',
+  );
 
-  final StreamController<double> _controller = StreamController<double>.broadcast();
-  StreamSubscription<double>? _subscription;
-  bool _isLightDetected = false;
+  StreamSubscription? _subscription;
+  final StreamController<double> _lightController =
+      StreamController<double>.broadcast();
 
-  // Real light detection using Android ambient light sensor
-  Future<bool> checkLightLevel() async {
-    return _isLightDetected;
+  void startMonitoring() async {
+    try {
+      await _methodChannel.invokeMethod('startLightSensor');
+      _subscription = _eventChannel.receiveBroadcastStream().listen(
+        (dynamic event) {
+          if (event is double) {
+            _lightController.add(event);
+          }
+        },
+        onError: (error) {
+          print('Light sensor error: $error');
+        },
+      );
+    } catch (e) {
+      print('Failed to start light sensor: $e');
+    }
   }
 
-  Stream<double> getLightStream() {
-    return _controller.stream;
+  void stopMonitoring() async {
+    try {
+      await _subscription?.cancel();
+      await _methodChannel.invokeMethod('stopLightSensor');
+    } catch (e) {
+      print('Failed to stop light sensor: $e');
+    }
   }
 
-  void startMonitoring() {
-    // Start listening to the platform channel
-    platform.invokeMethod('startLightSensor').catchError((error) {
-      print("Failed to start light sensor: $error");
-    });
-
-    _subscription = eventChannel
-        .receiveBroadcastStream()
-        .map((dynamic event) => (event as num).toDouble())
-        .listen(
-          (double lux) {
-            _isLightDetected = lux >= lightThreshold;
-            _controller.add(lux);
-          },
-          onError: (error) {
-            print('Light sensor stream error: $error');
-          },
-        );
-  }
-
-  void stopMonitoring() {
-    _subscription?.cancel();
-    platform.invokeMethod('stopLightSensor').catchError((error) {
-      print("Failed to stop light sensor: $error");
-    });
-    _isLightDetected = false;
-  }
+  Stream<double> getLightStream() => _lightController.stream;
 
   void dispose() {
     _subscription?.cancel();
-    _controller.close();
+    _lightController.close();
   }
 }

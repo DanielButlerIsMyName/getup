@@ -17,7 +17,12 @@ const Map<String, String> soundOptions = {
 };
 
 String getDisplayNameForPath(String path) {
-  return soundOptions.entries.firstWhere((e) => e.value == path, orElse: () => const MapEntry('Unknown', '')).key;
+  return soundOptions.entries
+      .firstWhere(
+        (e) => e.value == path,
+        orElse: () => const MapEntry('Unknown', ''),
+      )
+      .key;
 }
 
 class AlarmModel {
@@ -49,12 +54,18 @@ class AlarmModel {
   factory AlarmModel.fromJson(Map<String, dynamic> json) {
     ShakeIntensity parseShake(String? value) {
       if (value == null) return ShakeIntensity.medium;
-      return ShakeIntensity.values.firstWhere((e) => e.name == value, orElse: () => ShakeIntensity.medium);
+      return ShakeIntensity.values.firstWhere(
+        (e) => e.name == value,
+        orElse: () => ShakeIntensity.medium,
+      );
     }
 
     BrightnessThreshold parseBrightness(String? value) {
       if (value == null) return BrightnessThreshold.normal;
-      return BrightnessThreshold.values.firstWhere((e) => e.name == value, orElse: () => BrightnessThreshold.normal);
+      return BrightnessThreshold.values.firstWhere(
+        (e) => e.name == value,
+        orElse: () => BrightnessThreshold.normal,
+      );
     }
 
     return AlarmModel(
@@ -62,7 +73,9 @@ class AlarmModel {
       scheduledTime: DateTime.parse(json['scheduledTime']),
       isEnabled: json['isEnabled'] ?? true,
       shakeIntensity: parseShake(json['shakeIntensity'] as String?),
-      brightnessThreshold: parseBrightness(json['brightnessThreshold'] as String?),
+      brightnessThreshold: parseBrightness(
+        json['brightnessThreshold'] as String?,
+      ),
       audioPath: json['soundPath'] ?? 'assets/marimba.mp3',
     );
   }

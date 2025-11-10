@@ -40,9 +40,26 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _toggleAlarm(AlarmModel alarm, bool enabled) async {
+    DateTime scheduledTime = alarm.scheduledTime;
+
+    if (enabled && scheduledTime.isBefore(DateTime.now())) {
+      final now = DateTime.now();
+      scheduledTime = DateTime(
+        now.year,
+        now.month,
+        now.day,
+        alarm.scheduledTime.hour,
+        alarm.scheduledTime.minute,
+      );
+
+      if (scheduledTime.isBefore(now)) {
+        scheduledTime = scheduledTime.add(const Duration(days: 1));
+      }
+    }
+
     final updatedAlarm = AlarmModel(
       id: alarm.id,
-      scheduledTime: alarm.scheduledTime,
+      scheduledTime: scheduledTime,
       isEnabled: enabled,
       shakeIntensity: alarm.shakeIntensity,
       brightnessThreshold: alarm.brightnessThreshold,
@@ -67,7 +84,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Alarms'), backgroundColor: Theme.of(context).colorScheme.inversePrimary),
+      appBar: AppBar(
+        title: const Text('Alarms'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      ),
       body: Column(
         children: [
           Expanded(
@@ -88,12 +108,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         onDismissed: (_) => _deleteAlarm(alarm.id),
                         child: Card(
-                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
                           child: ListTile(
                             onTap: () async {
                               final result = await Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (context) => CreateAlarmScreen(alarm: alarm)),
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      CreateAlarmScreen(alarm: alarm),
+                                ),
                               );
                               if (result != null) {
                                 _loadAlarms();
@@ -110,12 +136,21 @@ class _HomeScreenState extends State<HomeScreen> {
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text("Shake intensity: ${alarm.shakeIntensity.displayName}"),
-                                Text("Brightness Threshold: ${alarm.brightnessThreshold.displayName}"),
-                                Text("Alarm sound: ${getDisplayNameForPath(alarm.audioPath)}"),
+                                Text(
+                                  "Shake intensity: ${alarm.shakeIntensity.displayName}",
+                                ),
+                                Text(
+                                  "Brightness Threshold: ${alarm.brightnessThreshold.displayName}",
+                                ),
+                                Text(
+                                  "Alarm sound: ${getDisplayNameForPath(alarm.audioPath)}",
+                                ),
                               ],
                             ),
-                            trailing: Switch(value: alarm.isEnabled, onChanged: (value) => _toggleAlarm(alarm, value)),
+                            trailing: Switch(
+                              value: alarm.isEnabled,
+                              onChanged: (value) => _toggleAlarm(alarm, value),
+                            ),
                           ),
                         ),
                       );
