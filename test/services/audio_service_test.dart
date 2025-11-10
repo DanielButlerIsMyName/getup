@@ -24,7 +24,7 @@ void main() {
     });
 
     test('playAlarm plays asset, loops, and vibrates when available', () async {
-      when(() => player.setAsset('assets/alarm.mp3'))
+      when(() => player.setAsset('assets/marimba.mp3'))
           .thenAnswer((_) async => Duration.zero);
       when(() => player.setLoopMode(LoopMode.one))
           .thenAnswer((_) async {});
@@ -35,7 +35,7 @@ void main() {
 
       await service.playAlarm();
 
-      verify(() => player.setAsset('assets/alarm.mp3')).called(1);
+      verify(() => player.setAsset('assets/marimba.mp3')).called(1);
       verify(() => player.setLoopMode(LoopMode.one)).called(1);
       verify(() => player.play()).called(1);
       verify(() => vibration.hasVibrator()).called(1);
@@ -46,14 +46,14 @@ void main() {
     });
 
     test('playAlarm falls back to vibration when audio throws', () async {
-      when(() => player.setAsset('assets/alarm.mp3'))
+      when(() => player.setAsset('assets/marimba.mp3'))
           .thenThrow(Exception('asset error'));
       when(() => vibration.vibrate(pattern: any(named: 'pattern'), repeat: any(named: 'repeat')))
           .thenAnswer((_) async {});
 
       await service.playAlarm();
 
-      verify(() => player.setAsset('assets/alarm.mp3')).called(1);
+      verify(() => player.setAsset('assets/marimba.mp3')).called(1);
       // No play/loop expected due to error
       verifyNever(() => player.setLoopMode(any()));
       verifyNever(() => player.play());

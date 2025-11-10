@@ -1,9 +1,12 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
+import 'notification_api.dart';
 
 class NotificationService {
-  final FlutterLocalNotificationsPlugin _notifications =
-      FlutterLocalNotificationsPlugin();
+  final NotificationApi _notifications;
+
+  NotificationService({NotificationApi? api})
+      : _notifications = api ?? FlutterNotificationApi();
 
   Future<void> initialize() async {
     debugPrint('Initializing notification service...');
@@ -28,11 +31,7 @@ class NotificationService {
       enableLights: true,
     );
 
-    await _notifications
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >()
-        ?.createNotificationChannel(channel);
+    await _notifications.createAndroidChannel(channel);
 
     debugPrint('Notification service initialized');
   }

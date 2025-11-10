@@ -5,9 +5,13 @@ import 'dart:async';
 class ShakeDetectorService {
   static const double shakeThreshold = 15.0;
   StreamSubscription? _subscription;
+  final Stream<AccelerometerEvent> _accelerometerStream;
+
+  ShakeDetectorService({Stream<AccelerometerEvent>? accelerometerStream})
+    : _accelerometerStream = accelerometerStream ?? accelerometerEvents;
 
   void startListening(Function() onShake) {
-    _subscription = accelerometerEvents.listen((AccelerometerEvent event) {
+    _subscription = _accelerometerStream.listen((AccelerometerEvent event) {
       double magnitude = sqrt(
         event.x * event.x + event.y * event.y + event.z * event.z,
       );

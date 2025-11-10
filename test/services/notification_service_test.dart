@@ -1,6 +1,29 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:getup/services/notification_service.dart';
+import 'package:getup/services/notification_api.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
+// A test API that mimics the plugin by talking directly over the same MethodChannel
+class TestNotificationApi implements NotificationApi {
+  final MethodChannel pluginChannel;
+  const TestNotificationApi(this.pluginChannel);
+
+  @override
+  Future<void> initialize(InitializationSettings settings) async {
+    await pluginChannel.invokeMethod<void>('initialize');
+  }
+
+  @override
+  Future<void> createAndroidChannel(AndroidNotificationChannel channel) async {
+    await pluginChannel.invokeMethod<void>('createNotificationChannel');
+  }
+
+  @override
+  Future<void> show(int id, String? title, String? body, NotificationDetails details) async {
+    await pluginChannel.invokeMethod<void>('show');
+  }
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -21,7 +44,7 @@ void main() {
         return null;
       });
 
-      service = NotificationService();
+      service = NotificationService(api: TestNotificationApi(pluginChannel));
     });
 
     tearDown(() {
