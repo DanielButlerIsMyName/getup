@@ -1,6 +1,7 @@
 import 'package:alarm/alarm.dart';
 import 'package:flutter/material.dart';
 import 'package:getup/models/alarm_model.dart';
+import '../constants/alarm_constants.dart';
 
 class AlarmManagerService {
   static Future<void> initialize() async {
@@ -13,16 +14,16 @@ class AlarmManagerService {
       id: alarm.id,
       dateTime: alarm.scheduledTime,
       assetAudioPath: alarm.audioPath,
-      loopAudio: true,
-      vibrate: true,
-      volumeSettings: const VolumeSettings.fixed(
-        volume: 1,
-        volumeEnforced: true,
+      loopAudio: AlarmConstants.alarmLoopAudio,
+      vibrate: AlarmConstants.alarmVibrate,
+      volumeSettings: VolumeSettings.fixed(
+        volume: AlarmConstants.alarmVolume,
+        volumeEnforced: AlarmConstants.alarmVolumeEnforced,
       ),
-      notificationSettings: const NotificationSettings(
-        title: 'ALARM!',
-        body: 'Time to wake up!',
-        stopButton: 'Stop',
+      notificationSettings: NotificationSettings(
+        title: AlarmConstants.notificationTitle,
+        body: AlarmConstants.notificationBody,
+        stopButton: AlarmConstants.notificationStopButton,
       ),
     );
 

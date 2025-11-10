@@ -1,13 +1,13 @@
 import 'package:sensors_plus/sensors_plus.dart';
 import 'dart:math';
 import 'dart:async';
+import '../constants/alarm_constants.dart';
 
 class ShakeDetectorService {
   StreamSubscription? _subscription;
   final Stream<AccelerometerEvent> _accelerometerStream;
   double _shakeThreshold = 15.0;
   DateTime? _lastShakeTime;
-  static const _shakeCooldown = Duration(milliseconds: 500);
 
   ShakeDetectorService({Stream<AccelerometerEvent>? accelerometerStream})
     : _accelerometerStream = accelerometerStream ?? accelerometerEvents;
@@ -20,7 +20,7 @@ class ShakeDetectorService {
       final now = DateTime.now();
 
       if (_lastShakeTime != null &&
-          now.difference(_lastShakeTime!) < _shakeCooldown) {
+          now.difference(_lastShakeTime!) < AlarmConstants.shakeCooldown) {
         return;
       }
 
