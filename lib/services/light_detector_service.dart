@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:async';
 
 class LightDetectorService {
@@ -23,11 +24,11 @@ class LightDetectorService {
           }
         },
         onError: (error) {
-          print('Light sensor error: $error');
+          debugPrint('Light sensor error: $error');
         },
       );
     } catch (e) {
-      print('Failed to start light sensor: $e');
+      debugPrint('Failed to start light sensor: $e');
     }
   }
 
@@ -36,7 +37,7 @@ class LightDetectorService {
       await _subscription?.cancel();
       await _methodChannel.invokeMethod('stopLightSensor');
     } catch (e) {
-      print('Failed to stop light sensor: $e');
+      debugPrint('Failed to stop light sensor: $e');
     }
   }
 
