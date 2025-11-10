@@ -15,10 +15,9 @@ class AlarmManagerService {
       assetAudioPath: alarm.audioPath,
       loopAudio: true,
       vibrate: true,
-      // TODO: MARC Adjust volume
       volumeSettings: const VolumeSettings.fixed(
-        volume: 0.1,
-        volumeEnforced: false,
+        volume: 1,
+        volumeEnforced: true,
       ),
       notificationSettings: const NotificationSettings(
         title: 'ALARM!',

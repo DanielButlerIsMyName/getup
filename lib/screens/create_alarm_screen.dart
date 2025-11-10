@@ -147,9 +147,7 @@ class _CreateAlarmScreenState extends State<CreateAlarmScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  const SizedBox(height: 8),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 48),
                   DropdownButtonFormField<ShakeIntensity>(
                     initialValue: _shakeIntensity,
                     decoration: const InputDecoration(
