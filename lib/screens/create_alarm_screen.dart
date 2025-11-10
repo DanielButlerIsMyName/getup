@@ -15,8 +15,15 @@ class _CreateAlarmScreenState extends State<CreateAlarmScreen> {
   final AlarmManagerService _alarmManager = AlarmManagerService();
 
   TimeOfDay _selectedTime = TimeOfDay.now();
-  bool _requireShake = false;
-  bool _requireLight = false;
+  ShakeIntensity _shakeIntensity = ShakeIntensity.medium;
+  BrightnessThreshold _brightnessThreshold = BrightnessThreshold.normal;
+  String _selectedSound = 'assets/marimba.mp3';
+
+  static const Map<String, String> _soundOptions = {
+    'Marimba': 'assets/marimba.mp3',
+    'Beep': 'assets/beep.mp3',
+    'Classic': 'assets/classic.mp3',
+  };
 
   Future<void> _selectTime() async {
     final TimeOfDay? picked = await showTimePicker(
@@ -44,27 +51,22 @@ class _CreateAlarmScreenState extends State<CreateAlarmScreen> {
       scheduledTime = scheduledTime.add(const Duration(days: 1));
     }
 
-    debugPrint('Creating alarm for: $scheduledTime');
-    debugPrint('Current time: $now');
-    debugPrint('Time until alarm: ${scheduledTime.difference(now)}');
-
     final alarms = await _storageService.loadAlarms();
     final newId = alarms.isEmpty ? 1 : alarms.map((a) => a.id).reduce((a, b) => a > b ? a : b) + 1;
 
     final alarm = AlarmModel(
       id: newId,
       scheduledTime: scheduledTime,
-      requireShake: _requireShake,
-      requireLight: _requireLight,
+      shakeIntensity: _shakeIntensity,
+      brightnessThreshold: _brightnessThreshold,
+      audioPath: _selectedSound,
     );
 
     alarms.add(alarm);
     await _storageService.saveAlarms(alarms);
+
     await _alarmManager.scheduleAlarm(
-      alarm.id,
-      scheduledTime,
-      requireShake: _requireShake,
-      requireLight: _requireLight,
+      alarm
     );
 
     debugPrint('Alarm saved with ID: $newId');
@@ -72,7 +74,7 @@ class _CreateAlarmScreenState extends State<CreateAlarmScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Alarm set for ${scheduledTime.hour}:${scheduledTime.minute.toString().padLeft(2, '0')}'),
+          content: Text('Alarm set for ${scheduledTime.hour.toString().padLeft(2, '0')}:${scheduledTime.minute.toString().padLeft(2, '0')}'),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -82,73 +84,108 @@ class _CreateAlarmScreenState extends State<CreateAlarmScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final availableHeight = MediaQuery.of(context).size.height -
+        kToolbarHeight -
+        MediaQuery.of(context).padding.top;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Create Alarm'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Card(
-              child: InkWell(
-                onTap: _selectTime,
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'Time',
-                        style: TextStyle(fontSize: 16),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _selectedTime.format(context),
-                        style: const TextStyle(
-                          fontSize: 48,
-                          fontWeight: FontWeight.bold,
+      body: SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: availableHeight),
+          child: IntrinsicHeight(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Card(
+                    child: InkWell(
+                      onTap: _selectTime,
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          children: [
+                            const Text(
+                              'Time',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _selectedTime.format(context),
+                              style: const TextStyle(
+                                fontSize: 48,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<ShakeIntensity>(
+                    initialValue: _shakeIntensity,
+                    decoration: const InputDecoration(labelText: 'Shake Intensity'),
+                    items: ShakeIntensity.values.map((e) {
+                      return DropdownMenuItem(
+                        value: e,
+                        child: Text(e.name[0].toUpperCase() + e.name.substring(1)),
+                      );
+                    }).toList(),
+                    onChanged: (v) {
+                      if (v != null) setState(() => _shakeIntensity = v);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<BrightnessThreshold>(
+                    initialValue: _brightnessThreshold,
+                    decoration: const InputDecoration(labelText: 'Brightness Threshold'),
+                    items: BrightnessThreshold.values.map((e) {
+                      return DropdownMenuItem(
+                        value: e,
+                        child: Text(e.name[0].toUpperCase() + e.name.substring(1)),
+                      );
+                    }).toList(),
+                    onChanged: (v) {
+                      if (v != null) setState(() => _brightnessThreshold = v);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: _selectedSound,
+                    decoration: const InputDecoration(labelText: 'Sound'),
+                    items: _soundOptions.entries.map((entry) {
+                      return DropdownMenuItem(
+                        value: entry.value,
+                        child: Text(entry.key),
+                      );
+                    }).toList(),
+                    onChanged: (v) {
+                      if (v != null) setState(() => _selectedSound = v);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(child: Container()),
+                  ElevatedButton(
+                    onPressed: _saveAlarm,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.all(16),
+                    ),
+                    child: const Text(
+                      'Save Alarm',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            SwitchListTile(
-              title: const Text('Require Shake to Dismiss'),
-              subtitle: const Text('Shake phone to turn off alarm'),
-              value: _requireShake,
-              onChanged: (value) {
-                setState(() {
-                  _requireShake = value;
-                });
-              },
-            ),
-            SwitchListTile(
-              title: const Text('Require Light to Dismiss'),
-              subtitle: const Text('Expose phone to light'),
-              value: _requireLight,
-              onChanged: (value) {
-                setState(() {
-                  _requireLight = value;
-                });
-              },
-            ),
-            const Spacer(),
-            ElevatedButton(
-              onPressed: _saveAlarm,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.all(16),
-              ),
-              child: const Text(
-                'Save Alarm',
-                style: TextStyle(fontSize: 18),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
