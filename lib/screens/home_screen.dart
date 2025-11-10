@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'dart:math';
 import '../models/alarm_model.dart';
 import '../services/storage_service.dart';
 import '../services/alarm_service.dart';
@@ -17,8 +16,6 @@ class _HomeScreenState extends State<HomeScreen> {
   final StorageService _storageService = StorageService();
   final AlarmManagerService _alarmManager = AlarmManagerService();
   List<AlarmModel> _alarms = [];
-
-  StreamSubscription<double>? _lightSubscription;
 
   @override
   void initState() {
@@ -76,10 +73,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              if (alarm.requireShake)
-                                const Text('🤝 Shake to dismiss'),
-                              if (alarm.requireLight)
-                                const Text('💡 Light to dismiss'),
+                                Text("Shake intensity: ${alarm.shakeIntensity.displayName}"),
+                                Text("Brightness Threshold: ${alarm.brightnessThreshold.displayName}"),
+                                Text("Alarm sound: ${alarm.audioPath}"),
                             ],
                           ),
                           trailing: IconButton(
