@@ -1,12 +1,14 @@
 import 'package:flutter/services.dart';
 import 'dart:async';
 
+import '../constants/alarm_constant.dart';
+
 class LightDetectorService {
   static const MethodChannel _methodChannel = MethodChannel(
-    'com.getup.alarm/sensors',
+    AlarmConstants.sensorChannel,
   );
   static const EventChannel _eventChannel = EventChannel(
-    'com.getup.alarm/light_sensor',
+    AlarmConstants.lightEventChannel,
   );
 
   StreamSubscription? _subscription;
@@ -15,7 +17,7 @@ class LightDetectorService {
 
   void startMonitoring() async {
     try {
-      await _methodChannel.invokeMethod('startLightSensor');
+      await _methodChannel.invokeMethod(AlarmConstants.methodStartLightSensor);
       _subscription = _eventChannel.receiveBroadcastStream().listen(
         (dynamic event) {
           if (event is double) {
@@ -34,7 +36,7 @@ class LightDetectorService {
   void stopMonitoring() async {
     try {
       await _subscription?.cancel();
-      await _methodChannel.invokeMethod('stopLightSensor');
+      await _methodChannel.invokeMethod(AlarmConstants.methodStopLightSensor);
     } catch (e) {
       print('Failed to stop light sensor: $e');
     }

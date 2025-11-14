@@ -2,17 +2,19 @@ import 'package:sensors_plus/sensors_plus.dart';
 import 'dart:math';
 import 'dart:async';
 
+import '../constants/alarm_constant.dart';
+
 class ShakeDetectorService {
   StreamSubscription? _subscription;
   final Stream<AccelerometerEvent> _accelerometerStream;
-  double _shakeThreshold = 15.0;
+  double _shakeThreshold = AlarmConstants.shakeThresholdLight;
   DateTime? _lastShakeTime;
-  static const _shakeCooldown = Duration(milliseconds: 500);
+  static const _shakeCooldown = AlarmConstants.shakeCooldown;
 
   ShakeDetectorService({Stream<AccelerometerEvent>? accelerometerStream})
     : _accelerometerStream = accelerometerStream ?? accelerometerEvents;
 
-  void startListening(Function() onShake, {double threshold = 15.0}) {
+  void startListening(Function() onShake, {double threshold = AlarmConstants.shakeThresholdLight}) {
     _shakeThreshold = threshold;
     _lastShakeTime = null;
 
