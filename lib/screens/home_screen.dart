@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:getup/screens/alarm_screen.dart';
 import 'dart:async';
 import '../models/alarm_model.dart';
 import '../services/storage_service.dart';
@@ -37,6 +38,24 @@ class _HomeScreenState extends State<HomeScreen> {
       _alarms.removeWhere((alarm) => alarm.id == id);
     });
     await _storageService.saveAlarms(_alarms);
+  }
+
+  Future<void> _navigateToAlarm() async {
+    final alarmModel = AlarmModel(
+      id: 0,
+      scheduledTime: DateTime.now(),
+      isEnabled: true,
+      shakeIntensity: ShakeIntensity.medium,
+      brightnessThreshold: BrightnessThreshold.normal,
+      audioPath: 'assets/marimba.mp3',
+    );
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => AlarmScreen(alarm: alarmModel)),
+    );
+    if (result != null) {
+      _loadAlarms();
+    }
   }
 
   Future<void> _toggleAlarm(AlarmModel alarm, bool enabled) async {
@@ -87,6 +106,12 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('Alarms'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.alarm),
+            onPressed: _navigateToAlarm,
+          ),
+        ],
       ),
       body: Column(
         children: [
