@@ -74,5 +74,19 @@ void main() {
       expect(loaded[1].brightnessThreshold, BrightnessThreshold.high);
       expect(loaded[1].audioPath, 'assets/beep.mp3');
     });
+
+    test('loadAlarms handles corrupted JSON gracefully', () async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('alarms', 'invalid json {{{');
+
+      expect(() => service.loadAlarms(), throwsFormatException);
+    });
+
+    test('loadAlarms handles missing required fields', () async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('alarms', '[{"id": 1}]');
+
+      expect(() => service.loadAlarms(), throwsA(isA<TypeError>()));
+    });
   });
 }
