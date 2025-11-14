@@ -17,7 +17,6 @@ class AlarmManagerService {
       assetAudioPath: alarm.audioPath,
       loopAudio: AlarmConstants.alarmLoopAudio,
       vibrate: AlarmConstants.alarmVibrate,
-      // Keep volume settings configurable via constants
       volumeSettings: const VolumeSettings.fixed(
         volume: AlarmConstants.alarmVolume,
         volumeEnforced: AlarmConstants.alarmVolumeEnforced,
