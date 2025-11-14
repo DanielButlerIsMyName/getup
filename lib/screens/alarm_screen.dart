@@ -9,8 +9,13 @@ import '../constants/alarm_constant.dart';
 
 class AlarmScreen extends StatefulWidget {
   final AlarmModel alarm;
+  final bool enableSensors;
 
-  const AlarmScreen({super.key, required this.alarm});
+  const AlarmScreen({
+    super.key,
+    required this.alarm,
+    this.enableSensors = true,
+  });
 
   @override
   State<AlarmScreen> createState() => _AlarmScreenState();
@@ -18,8 +23,8 @@ class AlarmScreen extends StatefulWidget {
 
 class _AlarmScreenState extends State<AlarmScreen>
     with SingleTickerProviderStateMixin {
-  final ShakeDetectorService _shakeDetector = ShakeDetectorService();
-  final LightDetectorService _lightDetector = LightDetectorService();
+  ShakeDetectorService? _shakeDetector;
+  LightDetectorService? _lightDetector;
   final AlarmManagerService _alarmService = AlarmManagerService();
 
   StreamSubscription<double>? _lightSubscription;
@@ -29,34 +34,38 @@ class _AlarmScreenState extends State<AlarmScreen>
   double _currentLightLevel = 0.0;
   int _shakeCount = 0;
   int _requiredShakes = 0;
+  int _lightThreshold = 0;
 
   @override
   void initState() {
     super.initState();
-    _setupAlarm();
-  }
-
-  Future<void> _setupAlarm() async {
-    // Keep screen on
-    WakelockPlus.enable();
-
     // Setup shake requirement
     _requiredShakes = _getRequiredShakes(widget.alarm.shakeIntensity);
+    _lightThreshold = _getLightThreshold(widget.alarm.brightnessThreshold);
+    // Setup light requirement
+    if (widget.enableSensors) {
+      WakelockPlus.enable();
+      _setupSensors();
+    }
+  }
+
+  void _setupSensors() {
+    _shakeDetector= ShakeDetectorService();
+    _lightDetector = LightDetectorService();
+
     if (_requiredShakes > 0) {
       final shakeThreshold = _getShakeThreshold(widget.alarm.shakeIntensity);
-      _shakeDetector.startListening(_onShake, threshold: shakeThreshold);
+      _shakeDetector?.startListening(_onShake, threshold: shakeThreshold);
     } else {
       _shakeRequirementMet = true;
     }
 
-    // Setup light requirement
-    final lightThreshold = _getLightThreshold(widget.alarm.brightnessThreshold);
-    if (lightThreshold > 0) {
-      _lightDetector.startMonitoring();
-      _lightSubscription = _lightDetector.getLightStream().listen((lux) {
+    if (_lightThreshold > 0) {
+      _lightDetector?.startMonitoring();
+      _lightSubscription = _lightDetector?.getLightStream().listen((lux) {
         setState(() {
           _currentLightLevel = lux;
-          _lightRequirementMet = lux >= lightThreshold;
+          _lightRequirementMet = lux >= _lightThreshold;
         });
       });
     } else {
@@ -109,8 +118,8 @@ class _AlarmScreenState extends State<AlarmScreen>
   Future<void> _dismissAlarm() async {
     if (!_canDismiss) return;
 
-    _shakeDetector.stopListening();
-    _lightDetector.stopMonitoring();
+    _shakeDetector?.stopListening();
+    _lightDetector?.stopMonitoring();
     await _lightSubscription?.cancel();
     WakelockPlus.disable();
 
@@ -124,9 +133,9 @@ class _AlarmScreenState extends State<AlarmScreen>
 
   @override
   void dispose() {
-    _shakeDetector.stopListening();
-    _lightDetector.stopMonitoring();
-    _lightDetector.dispose();
+    _shakeDetector?.stopListening();
+    _lightDetector?.stopMonitoring();
+    _lightDetector?.dispose();
     _lightSubscription?.cancel();
     WakelockPlus.disable();
     super.dispose();

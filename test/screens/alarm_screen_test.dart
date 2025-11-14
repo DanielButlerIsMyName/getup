@@ -4,7 +4,7 @@ import 'package:getup/screens/alarm_screen.dart';
 import 'package:getup/models/alarm_model.dart';
 
 void main() {
-  testWidgets('AlarmScreen displays alarm time and ALARM text', (
+  testWidgets('AlarmScreen displays alarm time and Dismiss text', (
     WidgetTester tester,
   ) async {
     final testAlarm = AlarmModel(
