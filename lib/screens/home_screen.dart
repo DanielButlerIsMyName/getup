@@ -50,7 +50,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _deleteAlarm(int id) async {
     await _alarmManager.cancelAlarm(id);
-    _alarms.removeWhere((alarm) => alarm.id == id);
+    setState(() {
+      _alarms.removeWhere((alarm) => alarm.id == id);
+    });
     await _storageService.saveAlarms(_alarms);
   }
 
