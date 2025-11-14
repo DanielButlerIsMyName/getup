@@ -5,6 +5,7 @@ import 'dart:async';
 import '../services/light_detector_service.dart';
 import '../services/shake_detector_service.dart';
 import '../models/alarm_model.dart';
+import '../constants/alarm_constant.dart';
 
 class AlarmScreen extends StatefulWidget {
   final AlarmModel alarm;
@@ -40,7 +41,7 @@ class _AlarmScreenState extends State<AlarmScreen>
     WakelockPlus.enable();
 
     // Setup shake requirement
-    _requiredShakes = 30;
+    _requiredShakes = _getRequiredShakes(widget.alarm.shakeIntensity);
     if (_requiredShakes > 0) {
       final shakeThreshold = _getShakeThreshold(widget.alarm.shakeIntensity);
       _shakeDetector.startListening(_onShake, threshold: shakeThreshold);
@@ -66,22 +67,33 @@ class _AlarmScreenState extends State<AlarmScreen>
   double _getShakeThreshold(ShakeIntensity intensity) {
     switch (intensity) {
       case ShakeIntensity.light:
-        return 50.0;
+        return AlarmConstants.shakeThresholdLight;
       case ShakeIntensity.medium:
-        return 100.0;
+        return AlarmConstants.shakeThresholdMedium;
       case ShakeIntensity.strong:
-        return 150.0;
+        return AlarmConstants.shakeThresholdStrong;
     }
   }
 
   int _getLightThreshold(BrightnessThreshold threshold) {
     switch (threshold) {
       case BrightnessThreshold.low:
-        return 300;
+        return AlarmConstants.lightThresholdLow;
       case BrightnessThreshold.normal:
-        return 400;
+        return AlarmConstants.lightThresholdNormal;
       case BrightnessThreshold.high:
-        return 500;
+        return AlarmConstants.lightThresholdHigh;
+    }
+  }
+
+  int _getRequiredShakes(ShakeIntensity intensity) {
+    switch (intensity) {
+      case ShakeIntensity.light:
+        return AlarmConstants.shakeCountLight;
+      case ShakeIntensity.medium:
+        return AlarmConstants.shakeCountMedium;
+      case ShakeIntensity.strong:
+        return AlarmConstants.shakeCountStrong;
     }
   }
 
