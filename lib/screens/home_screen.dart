@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:getup/screens/alarm_screen.dart';
 import 'dart:async';
+
+import 'package:flutter/material.dart';
+
 import '../models/alarm_model.dart';
-import '../services/storage_service.dart';
 import '../services/alarm_service.dart';
+import '../services/storage_service.dart';
 import 'create_alarm_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -17,11 +20,27 @@ class _HomeScreenState extends State<HomeScreen> {
   final StorageService _storageService = StorageService();
   final AlarmManagerService _alarmManager = AlarmManagerService();
   List<AlarmModel> _alarms = [];
+  Timer? _updateTimer;
 
   @override
   void initState() {
     super.initState();
     _loadAlarms();
+    _startUpdateTimer();
+  }
+
+  void _startUpdateTimer() {
+    _updateTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _updateTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadAlarms() async {
@@ -100,6 +119,28 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  String _getTimeUntilAlarm(AlarmModel alarm) {
+    final now = DateTime.now();
+    final scheduledTime = alarm.scheduledTime;
+    Duration difference = scheduledTime.difference(now);
+
+    if (difference.isNegative) {
+      difference = scheduledTime.add(const Duration(days: 1)).difference(now);
+    }
+
+    final hours = difference.inHours;
+    final minutes = difference.inMinutes % 60;
+    final seconds = difference.inSeconds % 60;
+
+    if (hours > 0) {
+      return 'in ${hours}h ${minutes}m ${seconds}s';
+    } else if (minutes > 0) {
+      return 'in ${minutes}m ${seconds}s';
+    } else {
+      return 'in ${seconds}s';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -150,6 +191,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                 _loadAlarms();
                               }
                             },
+                            leading: Icon(
+                              Icons.alarm,
+                              color: alarm.isEnabled ? null : Colors.grey,
+                            ),
                             title: Text(
                               '${alarm.scheduledTime.hour.toString().padLeft(2, '0')}:${alarm.scheduledTime.minute.toString().padLeft(2, '0')}',
                               style: TextStyle(
@@ -158,19 +203,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: alarm.isEnabled ? null : Colors.grey,
                               ),
                             ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "Shake intensity: ${alarm.shakeIntensity.displayName}",
-                                ),
-                                Text(
-                                  "Brightness Threshold: ${alarm.brightnessThreshold.displayName}",
-                                ),
-                                Text(
-                                  "Alarm sound: ${getDisplayNameForPath(alarm.audioPath)}",
-                                ),
-                              ],
+                            subtitle: Text(
+                              _getTimeUntilAlarm(alarm),
+                              style: TextStyle(
+                                color: alarm.isEnabled ? null : Colors.grey,
+                              ),
                             ),
                             trailing: Switch(
                               value: alarm.isEnabled,
