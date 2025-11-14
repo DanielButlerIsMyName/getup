@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:getup/screens/alarm_screen.dart';
 import 'dart:async';
 
+import 'package:flutter/material.dart';
+import 'package:getup/screens/alarm_screen.dart';
 
 import '../models/alarm_model.dart';
 import '../services/alarm_service.dart';
@@ -45,9 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadAlarms() async {
     final alarms = await _storageService.loadAlarms();
     alarms.sort((a, b) => b.id.compareTo(a.id));
-    setState(() {
-      _alarms = alarms;
-    });
+    setState(() => _alarms = alarms);
   }
 
   Future<void> _deleteAlarm(int id) async {
@@ -71,28 +69,29 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
       MaterialPageRoute(builder: (context) => AlarmScreen(alarm: alarmModel)),
     );
-    if (result != null) {
-      _loadAlarms();
+    if (result != null) _loadAlarms();
+  }
+
+  DateTime _calculateNextOccurrence(DateTime scheduledTime) {
+    final now = DateTime.now();
+    var nextTime = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      scheduledTime.hour,
+      scheduledTime.minute,
+    );
+    if (nextTime.isBefore(now)) {
+      nextTime = nextTime.add(const Duration(days: 1));
     }
+    return nextTime;
   }
 
   Future<void> _toggleAlarm(AlarmModel alarm, bool enabled) async {
-    DateTime scheduledTime = alarm.scheduledTime;
-
-    if (enabled && scheduledTime.isBefore(DateTime.now())) {
-      final now = DateTime.now();
-      scheduledTime = DateTime(
-        now.year,
-        now.month,
-        now.day,
-        alarm.scheduledTime.hour,
-        alarm.scheduledTime.minute,
-      );
-
-      if (scheduledTime.isBefore(now)) {
-        scheduledTime = scheduledTime.add(const Duration(days: 1));
-      }
-    }
+    final scheduledTime =
+        enabled && alarm.scheduledTime.isBefore(DateTime.now())
+        ? _calculateNextOccurrence(alarm.scheduledTime)
+        : alarm.scheduledTime;
 
     final updatedAlarm = AlarmModel(
       id: alarm.id,
@@ -105,9 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final index = _alarms.indexWhere((a) => a.id == alarm.id);
     if (index != -1) {
-      setState(() {
-        _alarms[index] = updatedAlarm;
-      });
+      setState(() => _alarms[index] = updatedAlarm);
       await _storageService.saveAlarms(_alarms);
 
       if (enabled) {
@@ -120,24 +117,33 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String _getTimeUntilAlarm(AlarmModel alarm) {
     final now = DateTime.now();
-    final scheduledTime = alarm.scheduledTime;
-    Duration difference = scheduledTime.difference(now);
+    var difference = alarm.scheduledTime.difference(now);
 
     if (difference.isNegative) {
-      difference = scheduledTime.add(const Duration(days: 1)).difference(now);
+      difference = alarm.scheduledTime
+          .add(const Duration(days: 1))
+          .difference(now);
     }
 
     final hours = difference.inHours;
     final minutes = difference.inMinutes % 60;
     final seconds = difference.inSeconds % 60;
 
-    if (hours > 0) {
-      return 'in ${hours}h ${minutes}m ${seconds}s';
-    } else if (minutes > 0) {
-      return 'in ${minutes}m ${seconds}s';
-    } else {
-      return 'in ${seconds}s';
-    }
+    if (hours > 0) return 'in ${hours}h ${minutes}m ${seconds}s';
+    if (minutes > 0) return 'in ${minutes}m ${seconds}s';
+    return 'in ${seconds}s';
+  }
+
+  String _formatTime(DateTime time) {
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _navigateToCreateOrEdit(AlarmModel? alarm) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => CreateAlarmScreen(alarm: alarm)),
+    );
+    if (result != null) _loadAlarms();
   }
 
   @override
@@ -178,24 +184,13 @@ class _HomeScreenState extends State<HomeScreen> {
                             vertical: 8,
                           ),
                           child: ListTile(
-                            onTap: () async {
-                              final result = await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      CreateAlarmScreen(alarm: alarm),
-                                ),
-                              );
-                              if (result != null) {
-                                _loadAlarms();
-                              }
-                            },
+                            onTap: () => _navigateToCreateOrEdit(alarm),
                             leading: Icon(
                               Icons.alarm,
                               color: alarm.isEnabled ? null : Colors.grey,
                             ),
                             title: Text(
-                              '${alarm.scheduledTime.hour.toString().padLeft(2, '0')}:${alarm.scheduledTime.minute.toString().padLeft(2, '0')}',
+                              _formatTime(alarm.scheduledTime),
                               style: TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
@@ -221,15 +216,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const CreateAlarmScreen()),
-          );
-          if (result != null) {
-            _loadAlarms();
-          }
-        },
+        onPressed: () => _navigateToCreateOrEdit(null),
         child: const Icon(Icons.add),
       ),
     );

@@ -24,75 +24,70 @@ class _CreateAlarmScreenState extends State<CreateAlarmScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.alarm != null) {
-      _selectedTime = TimeOfDay(
-        hour: widget.alarm!.scheduledTime.hour,
-        minute: widget.alarm!.scheduledTime.minute,
-      );
-      _shakeIntensity = widget.alarm!.shakeIntensity;
-      _brightnessThreshold = widget.alarm!.brightnessThreshold;
-      _selectedSound = widget.alarm!.audioPath;
-    } else {
-      _selectedTime = TimeOfDay.now();
-      _shakeIntensity = ShakeIntensity.medium;
-      _brightnessThreshold = BrightnessThreshold.normal;
-      _selectedSound = 'assets/marimba.mp3';
-    }
+    final alarm = widget.alarm;
+    _selectedTime = alarm != null
+        ? TimeOfDay(hour: alarm.scheduledTime.hour, minute: alarm.scheduledTime.minute)
+        : TimeOfDay.now();
+    _shakeIntensity = alarm?.shakeIntensity ?? ShakeIntensity.medium;
+    _brightnessThreshold = alarm?.brightnessThreshold ?? BrightnessThreshold.normal;
+    _selectedSound = alarm?.audioPath ?? 'assets/marimba.mp3';
   }
 
   Future<void> _selectTime() async {
-    final TimeOfDay? picked = await showTimePicker(
+    final picked = await showTimePicker(
       context: context,
       initialTime: _selectedTime,
     );
-    if (picked != null) {
-      setState(() {
-        _selectedTime = picked;
-      });
-    }
+    if (picked != null) setState(() => _selectedTime = picked);
   }
 
-  Future<void> _saveAlarm() async {
+  DateTime _createScheduledTime() {
     final now = DateTime.now();
-    DateTime scheduledTime = DateTime(
+    var scheduledTime = DateTime(
       now.year,
       now.month,
       now.day,
       _selectedTime.hour,
       _selectedTime.minute,
     );
-
     if (scheduledTime.isBefore(now)) {
       scheduledTime = scheduledTime.add(const Duration(days: 1));
     }
+    return scheduledTime;
+  }
 
+  int _generateNewId(List<AlarmModel> alarms) {
+    return alarms.isEmpty
+        ? 1
+        : alarms.map((a) => a.id).reduce((a, b) => a > b ? a : b) + 1;
+  }
+
+  AlarmModel _createAlarmModel(DateTime scheduledTime, int id, bool isEnabled) {
+    return AlarmModel(
+      id: id,
+      scheduledTime: scheduledTime,
+      isEnabled: isEnabled,
+      shakeIntensity: _shakeIntensity,
+      brightnessThreshold: _brightnessThreshold,
+      audioPath: _selectedSound,
+    );
+  }
+
+  Future<void> _saveAlarm() async {
+    final scheduledTime = _createScheduledTime();
     final alarms = await _storageService.loadAlarms();
 
     if (widget.alarm != null) {
       final index = alarms.indexWhere((a) => a.id == widget.alarm!.id);
       if (index != -1) {
-        alarms[index] = AlarmModel(
-          id: widget.alarm!.id,
-          scheduledTime: scheduledTime,
-          isEnabled: widget.alarm!.isEnabled,
-          shakeIntensity: _shakeIntensity,
-          brightnessThreshold: _brightnessThreshold,
-          audioPath: _selectedSound,
+        alarms[index] = _createAlarmModel(
+          scheduledTime,
+          widget.alarm!.id,
+          widget.alarm!.isEnabled,
         );
       }
     } else {
-      final newId = alarms.isEmpty
-          ? 1
-          : alarms.map((a) => a.id).reduce((a, b) => a > b ? a : b) + 1;
-      alarms.add(
-        AlarmModel(
-          id: newId,
-          scheduledTime: scheduledTime,
-          shakeIntensity: _shakeIntensity,
-          brightnessThreshold: _brightnessThreshold,
-          audioPath: _selectedSound,
-        ),
-      );
+      alarms.add(_createAlarmModel(scheduledTime, _generateNewId(alarms), true));
     }
 
     await _storageService.saveAlarms(alarms);
@@ -100,10 +95,10 @@ class _CreateAlarmScreenState extends State<CreateAlarmScreen> {
       alarms.firstWhere((a) => a.scheduledTime == scheduledTime),
     );
 
-    if (mounted) {
-      Navigator.pop(context, true);
-    }
+    if (mounted) Navigator.pop(context, true);
   }
+
+  String _capitalize(String text) => text[0].toUpperCase() + text.substring(1);
 
   @override
   Widget build(BuildContext context) {
@@ -114,7 +109,7 @@ class _CreateAlarmScreenState extends State<CreateAlarmScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create Alarm'),
+        title: Text(widget.alarm != null ? 'Edit Alarm' : 'Create Alarm'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: SingleChildScrollView(
@@ -148,8 +143,6 @@ class _CreateAlarmScreenState extends State<CreateAlarmScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const SizedBox(height: 8),
-                  const SizedBox(height: 16),
                   DropdownButtonFormField<ShakeIntensity>(
                     initialValue: _shakeIntensity,
                     decoration: const InputDecoration(
@@ -158,9 +151,7 @@ class _CreateAlarmScreenState extends State<CreateAlarmScreen> {
                     items: ShakeIntensity.values.map((e) {
                       return DropdownMenuItem(
                         value: e,
-                        child: Text(
-                          e.name[0].toUpperCase() + e.name.substring(1),
-                        ),
+                        child: Text(_capitalize(e.name)),
                       );
                     }).toList(),
                     onChanged: (v) {
@@ -176,9 +167,7 @@ class _CreateAlarmScreenState extends State<CreateAlarmScreen> {
                     items: BrightnessThreshold.values.map((e) {
                       return DropdownMenuItem(
                         value: e,
-                        child: Text(
-                          e.name[0].toUpperCase() + e.name.substring(1),
-                        ),
+                        child: Text(_capitalize(e.name)),
                       );
                     }).toList(),
                     onChanged: (v) {
@@ -200,7 +189,7 @@ class _CreateAlarmScreenState extends State<CreateAlarmScreen> {
                     },
                   ),
                   const SizedBox(height: 12),
-                  Expanded(child: Container()),
+                  const Spacer(),
                   ElevatedButton(
                     onPressed: _saveAlarm,
                     style: ElevatedButton.styleFrom(
