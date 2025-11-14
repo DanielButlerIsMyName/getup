@@ -39,10 +39,8 @@ class _AlarmScreenState extends State<AlarmScreen>
   @override
   void initState() {
     super.initState();
-    // Setup shake requirement
     _requiredShakes = _getRequiredShakes(widget.alarm.shakeIntensity);
     _lightThreshold = _getLightThreshold(widget.alarm.brightnessThreshold);
-    // Setup light requirement
     if (widget.enableSensors) {
       WakelockPlus.enable();
       _setupSensors();
@@ -50,17 +48,19 @@ class _AlarmScreenState extends State<AlarmScreen>
   }
 
   void _setupSensors() {
-    _shakeDetector= ShakeDetectorService();
+    _shakeDetector = ShakeDetectorService();
     _lightDetector = LightDetectorService();
 
-    if (_requiredShakes > 0) {
-      final shakeThreshold = _getShakeThreshold(widget.alarm.shakeIntensity);
-      _shakeDetector?.startListening(_onShake, threshold: shakeThreshold);
-    } else {
-      _shakeRequirementMet = true;
+    _shakeRequirementMet = !_hasShakeRequirement;
+    if (_hasShakeRequirement) {
+      _shakeDetector?.startListening(
+        _onShake,
+        threshold: _getShakeThreshold(widget.alarm.shakeIntensity),
+      );
     }
 
-    if (_lightThreshold > 0) {
+    _lightRequirementMet = !_hasLightRequirement;
+    if (_hasLightRequirement) {
       _lightDetector?.startMonitoring();
       _lightSubscription = _lightDetector?.getLightStream().listen((lux) {
         setState(() {
@@ -68,76 +68,57 @@ class _AlarmScreenState extends State<AlarmScreen>
           _lightRequirementMet = lux >= _lightThreshold;
         });
       });
-    } else {
-      _lightRequirementMet = true;
     }
   }
 
-  double _getShakeThreshold(ShakeIntensity intensity) {
-    switch (intensity) {
-      case ShakeIntensity.light:
-        return AlarmConstants.shakeThresholdLight;
-      case ShakeIntensity.medium:
-        return AlarmConstants.shakeThresholdMedium;
-      case ShakeIntensity.strong:
-        return AlarmConstants.shakeThresholdStrong;
-    }
-  }
+  double _getShakeThreshold(ShakeIntensity intensity) => switch (intensity) {
+    ShakeIntensity.light => AlarmConstants.shakeThresholdLight,
+    ShakeIntensity.medium => AlarmConstants.shakeThresholdMedium,
+    ShakeIntensity.strong => AlarmConstants.shakeThresholdStrong,
+  };
 
-  int _getLightThreshold(BrightnessThreshold threshold) {
-    switch (threshold) {
-      case BrightnessThreshold.low:
-        return AlarmConstants.lightThresholdLow;
-      case BrightnessThreshold.normal:
-        return AlarmConstants.lightThresholdNormal;
-      case BrightnessThreshold.high:
-        return AlarmConstants.lightThresholdHigh;
-    }
-  }
+  int _getLightThreshold(BrightnessThreshold threshold) => switch (threshold) {
+    BrightnessThreshold.low => AlarmConstants.lightThresholdLow,
+    BrightnessThreshold.normal => AlarmConstants.lightThresholdNormal,
+    BrightnessThreshold.high => AlarmConstants.lightThresholdHigh,
+  };
 
-  int _getRequiredShakes(ShakeIntensity intensity) {
-    switch (intensity) {
-      case ShakeIntensity.light:
-        return AlarmConstants.shakeCountLight;
-      case ShakeIntensity.medium:
-        return AlarmConstants.shakeCountMedium;
-      case ShakeIntensity.strong:
-        return AlarmConstants.shakeCountStrong;
-    }
-  }
+  int _getRequiredShakes(ShakeIntensity intensity) => switch (intensity) {
+    ShakeIntensity.light => AlarmConstants.shakeCountLight,
+    ShakeIntensity.medium => AlarmConstants.shakeCountMedium,
+    ShakeIntensity.strong => AlarmConstants.shakeCountStrong,
+  };
 
   void _onShake() {
     setState(() {
       _shakeCount++;
-      if (_shakeCount >= _requiredShakes) {
-        _shakeRequirementMet = true;
-      }
+      _shakeRequirementMet = _shakeCount >= _requiredShakes;
     });
+  }
+
+  void _cleanup() {
+    _shakeDetector?.stopListening();
+    _lightDetector?.stopMonitoring();
+    _lightSubscription?.cancel();
+    WakelockPlus.disable();
   }
 
   Future<void> _dismissAlarm() async {
     if (!_canDismiss) return;
 
-    _shakeDetector?.stopListening();
-    _lightDetector?.stopMonitoring();
-    await _lightSubscription?.cancel();
-    WakelockPlus.disable();
-
+    _cleanup();
     _alarmService.cancelAlarm(widget.alarm.id);
-    if (mounted) {
-      Navigator.of(context).pop(true);
-    }
+    if (mounted) Navigator.of(context).pop(true);
   }
 
   bool get _canDismiss => _shakeRequirementMet && _lightRequirementMet;
+  bool get _hasShakeRequirement => _requiredShakes > 0;
+  bool get _hasLightRequirement => _lightThreshold > 0;
 
   @override
   void dispose() {
-    _shakeDetector?.stopListening();
-    _lightDetector?.stopMonitoring();
+    _cleanup();
     _lightDetector?.dispose();
-    _lightSubscription?.cancel();
-    WakelockPlus.disable();
     super.dispose();
   }
 
@@ -157,7 +138,7 @@ class _AlarmScreenState extends State<AlarmScreen>
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     children: [
-                      if (_requiredShakes > 0)
+                      if (_hasShakeRequirement)
                         _RequirementCard(
                           icon: Icons.vibration,
                           title: 'Shake Phone',
@@ -165,27 +146,15 @@ class _AlarmScreenState extends State<AlarmScreen>
                           isCompleted: _shakeRequirementMet,
                           progress: _shakeCount / _requiredShakes,
                         ),
-
-                      if (_requiredShakes > 0 &&
-                          _getLightThreshold(widget.alarm.brightnessThreshold) >
-                              0)
+                      if (_hasShakeRequirement && _hasLightRequirement)
                         const SizedBox(height: 16),
-
-                      // Light requirement
-                      if (_getLightThreshold(widget.alarm.brightnessThreshold) >
-                          0)
+                      if (_hasLightRequirement)
                         _RequirementCard(
                           icon: Icons.light_mode,
                           title: 'Turn on Light',
-                          subtitle:
-                              '${_currentLightLevel.toStringAsFixed(0)} / ${_getLightThreshold(widget.alarm.brightnessThreshold)} lux',
+                          subtitle: '${_currentLightLevel.toStringAsFixed(0)} / $_lightThreshold lux',
                           isCompleted: _lightRequirementMet,
-                          progress:
-                              (_currentLightLevel /
-                                      _getLightThreshold(
-                                        widget.alarm.brightnessThreshold,
-                                      ))
-                                  .clamp(0.0, 1.0),
+                          progress: (_currentLightLevel / _lightThreshold).clamp(0.0, 1.0),
                         ),
                     ],
                   ),
@@ -200,20 +169,13 @@ class _AlarmScreenState extends State<AlarmScreen>
                   child: ElevatedButton(
                     onPressed: _canDismiss ? _dismissAlarm : null,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _canDismiss
-                          ? Colors.green
-                          : Colors.grey.shade700,
+                      backgroundColor: _canDismiss ? Colors.green : Colors.grey.shade700,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                     ),
-                    child: Text(
+                    child: const Text(
                       'Dismiss',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
@@ -247,11 +209,11 @@ class _RequirementCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isCompleted
-            ? Colors.green.withOpacity(0.3)
-            : Colors.white.withOpacity(0.1),
+            ? Colors.green.withValues(alpha: 0.3)
+            : Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isCompleted ? Colors.green : Colors.white.withOpacity(0.3),
+          color: isCompleted ? Colors.green : Colors.white.withValues(alpha: 0.3),
           width: 2,
         ),
       ),
@@ -280,7 +242,7 @@ class _RequirementCard extends StatelessWidget {
                   subtitle,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -288,7 +250,7 @@ class _RequirementCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
                     value: progress,
-                    backgroundColor: Colors.white.withOpacity(0.2),
+                    backgroundColor: Colors.white.withValues(alpha: 0.2),
                     valueColor: AlwaysStoppedAnimation<Color>(
                       isCompleted ? Colors.green : Colors.blue,
                     ),
