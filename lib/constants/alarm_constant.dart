@@ -5,9 +5,10 @@ class AlarmConstants {
   static const int shakeCountMedium = 10;
   static const int shakeCountStrong = 20;
 
-  static const double shakeThresholdLight = 50.0;
-  static const double shakeThresholdMedium = 100.0;
-  static const double shakeThresholdStrong = 150.0;
+  // (m/s^2)
+  static const double shakeThresholdLight = 12.0;
+  static const double shakeThresholdMedium = 18.0;
+  static const double shakeThresholdStrong = 24.0;
 
   static const Duration shakeCooldown = Duration(milliseconds: 500);
 

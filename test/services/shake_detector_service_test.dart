@@ -8,11 +8,11 @@ void main() {
 
   group('ShakeDetectorService', () {
     late ShakeDetectorService service;
-    late StreamController<AccelerometerEvent> controller;
+    late StreamController<UserAccelerometerEvent> controller;
     late List<bool> shakes;
 
     setUp(() {
-      controller = StreamController<AccelerometerEvent>();
+      controller = StreamController<UserAccelerometerEvent>();
       service = ShakeDetectorService(accelerometerStream: controller.stream);
       shakes = <bool>[];
     });
@@ -32,7 +32,7 @@ void main() {
 
       // Wait long enough that, if not cancelled, a shake would have been recorded
       Future<void>.delayed(const Duration(milliseconds: 50), () {
-        controller.add(AccelerometerEvent(10, 10, 10, DateTime.now()));
+        controller.add(UserAccelerometerEvent(10, 10, 10, DateTime.now()));
       });
       await Future<void>.delayed(const Duration(milliseconds: 200));
 
