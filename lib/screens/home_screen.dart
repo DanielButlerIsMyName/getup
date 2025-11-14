@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:getup/screens/alarm_screen.dart';
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 
 import '../models/alarm_model.dart';
 import '../services/alarm_service.dart';
