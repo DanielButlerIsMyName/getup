@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:getup/screens/alarm_screen.dart';
 import 'package:getup/models/alarm_model.dart';
+import 'package:getup/screens/alarm_screen.dart';
 
 void main() {
   testWidgets('AlarmScreen displays alarm time and Dismiss text', (

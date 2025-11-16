@@ -15,12 +15,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: AlarmScreen(
-          alarm: alarmModel,
-          enableSensors: false,
-        ),
-      ),
+      MaterialApp(home: AlarmScreen(alarm: alarmModel, enableSensors: false)),
     );
 
     await tester.pumpAndSettle();

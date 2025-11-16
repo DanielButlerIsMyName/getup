@@ -1,11 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:getup/services/alarm_service.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-import 'dart:async';
+
+import '../constants/alarm_constant.dart';
+import '../models/alarm_model.dart';
 import '../services/light_detector_service.dart';
 import '../services/shake_detector_service.dart';
-import '../models/alarm_model.dart';
-import '../constants/alarm_constant.dart';
 
 class AlarmScreen extends StatefulWidget {
   final AlarmModel alarm;
@@ -112,7 +114,9 @@ class _AlarmScreenState extends State<AlarmScreen>
   }
 
   bool get _canDismiss => _shakeRequirementMet && _lightRequirementMet;
+
   bool get _hasShakeRequirement => _requiredShakes > 0;
+
   bool get _hasLightRequirement => _lightThreshold > 0;
 
   @override
@@ -152,9 +156,11 @@ class _AlarmScreenState extends State<AlarmScreen>
                         _RequirementCard(
                           icon: Icons.light_mode,
                           title: 'Turn on Light',
-                          subtitle: '${_currentLightLevel.toStringAsFixed(0)} / $_lightThreshold lux',
+                          subtitle:
+                              '${_currentLightLevel.toStringAsFixed(0)} / $_lightThreshold lux',
                           isCompleted: _lightRequirementMet,
-                          progress: (_currentLightLevel / _lightThreshold).clamp(0.0, 1.0),
+                          progress: (_currentLightLevel / _lightThreshold)
+                              .clamp(0.0, 1.0),
                         ),
                     ],
                   ),
@@ -169,13 +175,20 @@ class _AlarmScreenState extends State<AlarmScreen>
                   child: ElevatedButton(
                     onPressed: _canDismiss ? _dismissAlarm : null,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _canDismiss ? Colors.green : Colors.grey.shade700,
+                      backgroundColor: _canDismiss
+                          ? Colors.green
+                          : Colors.grey.shade700,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
                     ),
                     child: const Text(
                       'Dismiss',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -213,7 +226,9 @@ class _RequirementCard extends StatelessWidget {
             : Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isCompleted ? Colors.green : Colors.white.withValues(alpha: 0.3),
+          color: isCompleted
+              ? Colors.green
+              : Colors.white.withValues(alpha: 0.3),
           width: 2,
         ),
       ),
