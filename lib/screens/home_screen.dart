@@ -28,6 +28,12 @@ class _HomeScreenState extends State<HomeScreen> {
     _startUpdateTimer();
   }
 
+  @override
+  void dispose() {
+    _updateTimer?.cancel();
+    super.dispose();
+  }
+
   void _startUpdateTimer() {
     _updateTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) {
@@ -36,16 +42,15 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  @override
-  void dispose() {
-    _updateTimer?.cancel();
-    super.dispose();
-  }
-
   Future<void> _loadAlarms() async {
-    final alarms = await _storageService.loadAlarms();
-    alarms.sort((a, b) => b.id.compareTo(a.id));
-    setState(() => _alarms = alarms);
+    try {
+      final alarms = await _storageService.loadAlarms();
+      alarms.sort((a, b) => b.id.compareTo(a.id));
+      setState(() => _alarms = alarms);
+    } catch (e) {
+      debugPrint('Failed to load alarms: $e');
+      setState(() => _alarms = []);
+    }
   }
 
   Future<void> _deleteAlarm(int id) async {

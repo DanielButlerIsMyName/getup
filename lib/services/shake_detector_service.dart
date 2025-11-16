@@ -1,6 +1,7 @@
-import 'package:sensors_plus/sensors_plus.dart';
-import 'dart:math';
 import 'dart:async';
+import 'dart:math';
+
+import 'package:sensors_plus/sensors_plus.dart';
 
 import '../constants/alarm_constant.dart';
 
@@ -12,12 +13,13 @@ class ShakeDetectorService {
   static const _shakeCooldown = AlarmConstants.shakeCooldown;
 
   ShakeDetectorService({Stream<UserAccelerometerEvent>? accelerometerStream})
-      : _accelerometerStream =
-            accelerometerStream ?? userAccelerometerEventStream();
+    : _accelerometerStream =
+          accelerometerStream ?? userAccelerometerEventStream();
 
-  void startListening(Function() onShake,
-      {double threshold = AlarmConstants.shakeThresholdLight}) {
-
+  void startListening(
+    Function() onShake, {
+    double threshold = AlarmConstants.shakeThresholdLight,
+  }) {
     if (_subscription != null) return;
 
     _shakeThreshold = threshold;
@@ -26,11 +28,14 @@ class ShakeDetectorService {
     _subscription = _accelerometerStream.listen((event) {
       final now = DateTime.now();
 
-      if (_lastShakeTime != null && now.difference(_lastShakeTime!) < _shakeCooldown) {
+      if (_lastShakeTime != null &&
+          now.difference(_lastShakeTime!) < _shakeCooldown) {
         return;
       }
 
-      final magnitude = sqrt(event.x * event.x + event.y * event.y + event.z * event.z);
+      final magnitude = sqrt(
+        event.x * event.x + event.y * event.y + event.z * event.z,
+      );
 
       if (magnitude > _shakeThreshold) {
         _lastShakeTime = now;
@@ -38,8 +43,7 @@ class ShakeDetectorService {
           onShake();
         } catch (_) {}
       }
-    }, onError: (e) {
-    });
+    }, onError: (e) {});
   }
 
   void stopListening() {

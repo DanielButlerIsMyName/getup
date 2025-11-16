@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+
 import '../models/alarm_model.dart';
-import '../services/storage_service.dart';
 import '../services/alarm_service.dart';
+import '../services/storage_service.dart';
 
 class CreateAlarmScreen extends StatefulWidget {
   final AlarmModel? alarm;
@@ -26,10 +27,14 @@ class _CreateAlarmScreenState extends State<CreateAlarmScreen> {
     super.initState();
     final alarm = widget.alarm;
     _selectedTime = alarm != null
-        ? TimeOfDay(hour: alarm.scheduledTime.hour, minute: alarm.scheduledTime.minute)
+        ? TimeOfDay(
+            hour: alarm.scheduledTime.hour,
+            minute: alarm.scheduledTime.minute,
+          )
         : TimeOfDay.now();
     _shakeIntensity = alarm?.shakeIntensity ?? ShakeIntensity.medium;
-    _brightnessThreshold = alarm?.brightnessThreshold ?? BrightnessThreshold.normal;
+    _brightnessThreshold =
+        alarm?.brightnessThreshold ?? BrightnessThreshold.normal;
     _selectedSound = alarm?.audioPath ?? 'assets/marimba.mp3';
   }
 
@@ -87,7 +92,9 @@ class _CreateAlarmScreenState extends State<CreateAlarmScreen> {
         );
       }
     } else {
-      alarms.add(_createAlarmModel(scheduledTime, _generateNewId(alarms), true));
+      alarms.add(
+        _createAlarmModel(scheduledTime, _generateNewId(alarms), true),
+      );
     }
 
     await _storageService.saveAlarms(alarms);
